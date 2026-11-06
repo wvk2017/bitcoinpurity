@@ -1,9 +1,9 @@
 # --- STAGE 1: Compileren van de broncode ---
 FROM ubuntu:22.04 AS builder
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Voorkom dat apt-get blijft hangen op interactieve vragen
+ARG DEBIAN_FRONTEND=noninteractive
 
-# Installeer alle vereiste build-dependencies voor Bitcoin Knots/Purity
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libtool \
@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /usr/src/bitcoinpurity
 
-# GECORRIGEERD: De volledige link naar de Bitcoin Purity repository
+# Haal de broncode op van de officiële repository
 RUN git clone --depth 1 https://github.com .
 
 # Start het build-proces
@@ -36,9 +36,9 @@ RUN ./autogen.sh && \
 # --- STAGE 2: De uiteindelijke minimale runtime image ---
 FROM ubuntu:22.04
 
-ENV DEBIAN_FRONTEND=noninteractive
+# FIX: Moet OOK in stage 2 gedefinieerd worden om prompts te blokkeren
+ARG DEBIAN_FRONTEND=noninteractive
 
-# Installeer alleen de noodzakelijke runtime libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libevent-2.1-7 \
     libevent-pthreads-2.1-7 \
