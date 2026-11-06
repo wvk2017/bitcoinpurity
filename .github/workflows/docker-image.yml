@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
 
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -21,7 +23,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: wvk2017/nodes
+          images: theretromike/nodes
 
       - name: Build and push Docker image
         id: push
@@ -30,6 +32,6 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          # Hier voegen we de specifieke versie én de latest tag toe (gescheiden door een nieuwe regel)
-          tags: |
-            wvk2017/nodes:bitcoinpurity
+          tags: theretromike/nodes:btc1
+          #tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
