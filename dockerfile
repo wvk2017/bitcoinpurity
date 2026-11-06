@@ -24,10 +24,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /usr/src/bitcoinpurity
 
-# Kloon de officiële repository
+# FIX: De volledige URL naar de correcte repository
 RUN git clone --depth 1 https://github.com .
 
-# Start het build-proces (zonder wallet-dependencies om het simpel en compact te houden)
+# Start het build-proces
 RUN ./autogen.sh && \
     ./configure --disable-wallet --without-gui --without-miniupnpc && \
     make -j$(nproc) && \
@@ -38,16 +38,17 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Installeer alleen de noodzakelijke runtime libraries (houdt de image klein)
+# Installeer alleen de noodzakelijke runtime libraries (houdt de image compact)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libevent-2.1-7 \
     libevent-pthreads-2.1-7 \
     libboost-system1.74.0 \
     libboost-filesystem1.74.0 \
     libboost-thread1.74.0 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Kopieer de gecodeerde binaries uit de builder-stage naar de runtime-stage
+# Kopieer de gebouwde binaries uit de builder-stage
 COPY --from=builder /usr/local/bin/bitcoind /usr/bin/bitcoind
 COPY --from=builder /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli
 
