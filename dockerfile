@@ -1,8 +1,14 @@
 FROM ubuntu:22.04
-RUN apt-get update -y
-RUN apt-get install wget -y
+
+RUN apt-get update -y && apt-get install wget -y
+
 WORKDIR /opt/
-RUN wget https://github.com/saltduck/bitcoinpurity/releases/download/v1.1.0/bitcoinpurity-1.1.0-x86_64-linux-gnu.tar.gz
+
+RUN wget https://github.com
+
 RUN tar zxvf bitcoinpurity-1.1.0-x86_64-linux-gnu.tar.gz
-RUN mv bitcoinpurity-1.1.0-x86_64-linux-gnu/bin/* /usr/bin/
+
+# FIX: De uitgepakte map heet simpelweg 'bitcoinpurity-1.1.0'
+RUN mv bitcoinpurity-1.1.0/bin/* /usr/bin/
+
 CMD /usr/bin/bitcoind -printtoconsole
