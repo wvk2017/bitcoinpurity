@@ -1,20 +1,56 @@
-FROM ubuntu:22.04
+# --- STAGE 1: Compileren van de broncode ---
+FROM ubuntu:22.04 AS builder
 
-# DEBIAN_FRONTEND voorkomt dat installaties wachten op gebruikersinput
 ENV DEBIAN_FRONTEND=noninteractive
 
-# --no-install-recommends houdt de installatie compact en snel
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends wget ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# Installeer alle vereiste build-dependencies voor Bitcoin Knots/Purity
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libtool \
+    autotools-dev \
+    automake \
+    pkg-config \
+    bsdmainutils \
+    python3 \
+    libssl-dev \
+    libevent-dev \
+    libboost-dev \
+    libboost-system-dev \
+    libboost-filesystem-dev \
+    libboost-thread-dev \
+    git \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/
+WORKDIR /usr/src/bitcoinpurity
 
-# De volledige en werkende download-link
-RUN wget https://github.com
+# Kloon de officiële repository
+RUN git clone --depth 1 https://github.com .
 
-RUN tar zxvf bitcoinpurity-1.1.0-x86_64-linux-gnu.tar.gz && \
-    mv bitcoinpurity-1.1.0/bin/* /usr/bin/ && \
-    rm bitcoinpurity-1.1.0-x86_64-linux-gnu.tar.gz
+# Start het build-proces (zonder wallet-dependencies om het simpel en compact te houden)
+RUN ./autogen.sh && \
+    ./configure --disable-wallet --without-gui --without-miniupnpc && \
+    make -j$(nproc) && \
+    make install
+
+# --- STAGE 2: De uiteindelijke minimale runtime image ---
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Installeer alleen de noodzakelijke runtime libraries (houdt de image klein)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libevent-2.1-7 \
+    libevent-pthreads-2.1-7 \
+    libboost-system1.74.0 \
+    libboost-filesystem1.74.0 \
+    libboost-thread1.74.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Kopieer de gecodeerde binaries uit de builder-stage naar de runtime-stage
+COPY --from=builder /usr/local/bin/bitcoind /usr/bin/bitcoind
+COPY --from=builder /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli
+
+WORKDIR /root/.bitcoin
 
 CMD ["/usr/bin/bitcoind", "-printtoconsole"]
